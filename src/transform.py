@@ -3,7 +3,22 @@ import os
 import json
 import pandas as pd
 
-class TransformParceiros:
+class BaseTransform:
+    MAPA_EMPRESA = {
+        "gerencial": 10001,
+        "fiscal": 10002
+    }
+
+    def get_id_empresa(self):
+
+        if self.type not in self.MAPA_EMPRESA:
+            raise ValueError(
+                f"Tipo inválido: {self.type}"
+            )
+
+        return self.MAPA_EMPRESA[self.type]
+    
+class TransformParceiros(BaseTransform):
     def __init__(self, type: str, tipo: int):
         self.type = type.lower()
         self.tipo = tipo
@@ -37,18 +52,8 @@ class TransformParceiros:
 
     def add_id_empresa(self, df):
         df = df.copy()
-        
-        mapa = {
-            "gerencial": 10001,
-            "fiscal": 10002
-        }
 
-        
-        
-        if self.type not in mapa:
-            raise ValueError(f"Tipo inválido: {self.type}")
-        
-        df["_idEmp"] = mapa[self.type]
+        df["_idEmp"] = self.get_id_empresa()
         
         if self.tipo in (1, 5):
             df["_idCliente"] = df["_idEmp"].astype(str) + "_" + df["codigo"].astype(str)
@@ -58,3 +63,28 @@ class TransformParceiros:
         return df
 
 
+class TransformOperacoes(BaseTransform):
+    def __init__(self, type: str):      
+        self.type = type.lower()
+    
+    def transform(self, df):
+
+        cols = [
+            "codigo",
+            "descricao"
+        ]
+
+        cols_existentes = [
+            c for c in cols
+            if c in df.columns
+        ]
+
+        return df[cols_existentes]
+    def add_id_empresa(self, df):
+        df = df.copy()
+
+        df["_idEmp"] = self.get_id_empresa()
+
+        df["_idOperacao"] = df["_idEmp"].astype(str) + "_" + df["codigo"].astype(str)
+
+        return df

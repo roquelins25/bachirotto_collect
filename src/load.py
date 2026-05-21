@@ -16,6 +16,7 @@ _SQL_DIR = os.path.join(os.path.dirname(__file__), "..", "sql")
 _COLUMN_RENAME = {
     "tb_cliente": {"_idEmp": "idemp", "_idCliente": "idcliente"},
     "tb_representante": {"_idEmp": "idemp", "_idRep": "idrep"},
+    "tb_operacao": {"_idEmp": "idemp", "_idOperacao": "idop"},
 }
 
 
