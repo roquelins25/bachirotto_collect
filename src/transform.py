@@ -2,6 +2,7 @@
 import os
 import json
 import pandas as pd
+import numpy as np
 
 class BaseTransform:
     MAPA_EMPRESA = {
@@ -88,3 +89,75 @@ class TransformOperacoes(BaseTransform):
         df["_idOperacao"] = df["_idEmp"].astype(str) + "_" + df["codigo"].astype(str)
 
         return df
+    
+
+# %%
+class TransformProdutos(BaseTransform):
+
+    def __init__(self, type: str):
+        self.type = type.lower()
+
+    def expandir_coluna(self, df, coluna):
+
+        if coluna not in df.columns:
+            return df
+
+        expandido = pd.json_normalize(df[coluna])
+
+        expandido.columns = [
+            f"{coluna}_{c}"
+            for c in expandido.columns
+        ]
+
+        df = pd.concat(
+            [
+                df.drop(columns=[coluna]),
+                expandido
+            ],
+            axis=1
+        )
+
+        return df
+
+    def transform(self, df):
+
+        cols = [
+            "codigo",
+            "referencia",
+            "descricao",
+            "unidade",
+            "ativo",
+            "tipo",
+            "categoria"
+        ]
+
+        cols_existentes = [
+            c for c in cols
+            if c in df.columns
+        ]
+
+        df = df[cols_existentes].copy()
+
+        # Expande categoria
+        df = self.expandir_coluna(df, "categoria")
+
+        return df
+
+    def add_id_empresa(self, df):
+
+        df = df.copy()
+
+        df["_idEmp"] = self.get_id_empresa()
+
+        df["_idProd"] = (
+            df["_idEmp"].astype(str)
+            + "_"
+            + df["codigo"].astype(str)
+        )
+        df["xtipo"] = np.where(
+                 df["descricao"].str.contains("feijao", case=False, na=False),
+                "FEIJAO",
+                "MIX")
+
+        return df
+# %%

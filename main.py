@@ -6,7 +6,7 @@ from datetime import datetime
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "src"))
 
 import pandas as pd
-from extract import ColectorParceiros, ColetorOperacoes
+from extract import ColectorParceiros, ColetorOperacoes, ColetorProdutos
 from load import process_table
 
 logging.basicConfig(
@@ -44,7 +44,11 @@ def run_tb_representante() -> None:
 
 
 def run_tb_produto() -> None:
-    logger.info("tb_produto: não implementado — pulando")
+    df_gerencial = ColetorProdutos().process("gerencial")
+    df_fiscal = ColetorProdutos().process("fiscal")
+    df = pd.concat([df_gerencial, df_fiscal], ignore_index=True).drop_duplicates(subset=["_idProd"])
+    logger.info("tb_produto: %d registros extraídos", len(df))
+    process_table("tb_produto", df)
 
 
 def run_tb_operacao() -> None:
