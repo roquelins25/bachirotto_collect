@@ -22,10 +22,17 @@ class TransformParceiros:
             "datacadastro"
         ]
         
-        # garante que só pega colunas existentes
         cols_existentes = [c for c in cols if c in df.columns]
-        
-        return df[cols_existentes]
+        df = df[cols_existentes].copy()
+
+        # API retorna a string "null" para campos sem valor
+        df = df.replace("null", pd.NA)
+
+        for col in ["codigo", "codvendedor"]:
+            if col in df.columns:
+                df[col] = df[col].astype("Int64")
+
+        return df
     
 
     def add_id_empresa(self, df):
@@ -43,22 +50,11 @@ class TransformParceiros:
         
         df["_idEmp"] = mapa[self.type]
         
-        if self.tipo == 1:
+        if self.tipo in (1, 5):
             df["_idCliente"] = df["_idEmp"].astype(str) + "_" + df["codigo"].astype(str)
         elif self.tipo == 4:
             df["_idRep"] = df["_idEmp"].astype(str) + "_" + df["codigo"].astype(str)
         
         return df
 
-
-    def load_process(self,data):
-        # garante estrutura correta
-        data = data.get('data', [])
-        
-        df = pd.DataFrame(data)
-        
-        df_tratado = self.transform(df)
-        df_final = self.add_id_empresa(df_tratado)
-        
-        return df_final
 
