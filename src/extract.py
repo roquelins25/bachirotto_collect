@@ -1,46 +1,41 @@
 # %%
-import requests
 import os
+import sys
+
 import pandas as pd
-from dotenv import load_dotenv
-from transform import TransformParceiros
 
-load_dotenv()
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
+from config.api_conect import SimDataAPI
+from transform import TransformParceiros, TransformOperacoes
 
-gerencial_token = os.getenv("GERENCIAL")
-fiscal_token = os.getenv("FISCAL")
+# %%
+class ColectorParceiros(SimDataAPI):
 
-
-class ColectorParceiros:
-
-    def __init__(self, type=None, tipo='1'):
-        self.type = type.lower() if type else None
+    def __init__(self, tipo: str = "1"):
+        super().__init__()
         self.tipo = int(tipo)
-        self.gerencial_token = gerencial_token
-        self.fiscal_token = fiscal_token
-        self.url = "https://api.simdata.com.br"
-        self.endpoint = f"parceiros/listar?tipo={tipo}"
+        self._endpoint = f"parceiros/listar?tipo={tipo}"
 
-    def get_extract(self, type_process):
-        if type_process == 'gerencial':
-            token = self.gerencial_token
-        elif type_process == 'fiscal':
-            token = self.fiscal_token
-        else:
-            raise ValueError(f"Tipo inválido: {type_process}")
-
-        response = requests.get(
-            f"{self.url}/{self.endpoint}",
-            headers={"apitoken": token}
-        )
-        response.raise_for_status()
-        return response.json()
-
-    def process_type(self, type_process):
-        data_json = self.get_extract(type_process)
-        data = data_json.get("data", [])
+    def process_type(self, type_process: str) -> pd.DataFrame:
+        data = self.get(self._endpoint, type_process).get("data", [])
         df = pd.DataFrame(data)
-
         transform = TransformParceiros(type=type_process, tipo=self.tipo)
-        df_tratado = transform.transform(df)
-        return transform.add_id_empresa(df_tratado)
+        return transform.add_id_empresa(transform.transform(df))
+# %%
+class ColetorOperacoes(SimDataAPI):
+
+    def __init__(self):
+        super().__init__()
+        self._endpoint = "operacoes/listar"
+
+    def process(self, type_process: str) -> pd.DataFrame:
+        data = self.get(self._endpoint, type_process).get("data", [])
+        df = pd.DataFrame(data)
+        transform = TransformOperacoes(type=type_process)
+        return transform.add_id_empresa(transform.transform(df))
+
+# %%
+operacoes = ColetorOperacoes()
+df_gerencial = operacoes.process("gerencial")
+df_gerencial.head()
+# %%
