@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(Get-ChildItem -Path \"g:\\\\Meu Drive\\\\Python\\\\Baschirotto_collect\" -Recurse -Force)",
+      "Bash(Select-Object FullName)",
+      "Bash(Sort-Object FullName)",
+      "Bash(New-Item -ItemType Directory -Force \"g:\\\\Meu Drive\\\\Python\\\\Baschirotto_collect\\\\dags\")",
+      "Bash(Out-Null)",
+      "Bash(Write-Output \"ok\")",
+      "Bash(dir \"g:\\\\Meu Drive\\\\Python\\\\DuasMeninas_collect\\\\dags\")",
+      "Bash(dir \"g:\\\\Meu Drive\\\\Python\\\\Baschirotto_collect\")"
+    ]
+  }
+}
