@@ -6,7 +6,7 @@ import pandas as pd
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 from config.api_conect import SimDataAPI
-from transform import TransformParceiros, TransformOperacoes , TransformProdutos
+from transform import TransformParceiros, TransformOperacoes , TransformProdutos, TransformFatos
 
 # %%
 class ColectorParceiros(SimDataAPI):
@@ -47,9 +47,16 @@ class ColetorProdutos(SimDataAPI):
         transform = TransformProdutos(type=type_process)
         return transform.add_id_empresa(transform.transform(df))
 # %%
-Prod = ColetorProdutos()
-df_prod = Prod.process(type_process="gerencial")
-# %%
-df_prod.head()
+class ColetorFatos(SimDataAPI):
 
-# %%
+    def __init__(self, dataInicial: str, dataFinal: str):
+        super().__init__()
+        self.dataInicial = dataInicial
+        self.dataFinal = dataFinal
+        self._endpoint = f"vendas/listar?tipodata=cadastro&dataInicial={self.dataInicial}&dataFinal={self.dataFinal}"
+
+    def process(self, type_process: str) -> pd.DataFrame:
+        data = self.get(self._endpoint, type_process).get("data", [])
+        df = pd.DataFrame(data)
+        transform = TransformFatos(type=type_process)
+        return transform.add_id_empresa(transform.transform(df))

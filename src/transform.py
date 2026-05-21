@@ -90,8 +90,6 @@ class TransformOperacoes(BaseTransform):
 
         return df
     
-
-# %%
 class TransformProdutos(BaseTransform):
 
     def __init__(self, type: str):
@@ -161,3 +159,143 @@ class TransformProdutos(BaseTransform):
 
         return df
 # %%
+class TransformFatos(BaseTransform):
+
+    def __init__(self, type: str):
+        self.type = type.lower()
+   
+    def expandir_campo(self, df, coluna, campo, novo_nome=None):
+
+        if coluna not in df.columns:
+            return df
+
+        if novo_nome is None:
+            novo_nome = f"{coluna}_{campo}"
+
+        df[novo_nome] = df[coluna].apply(
+            lambda x: x.get(campo) if isinstance(x, dict) else None
+        )
+
+        return df
+    
+    def expandir_lista(self, df, coluna, campos=None):
+
+        if coluna not in df.columns:
+            return df
+
+        # explode lista
+        df = df.explode(coluna)
+
+        # se vazio
+        if df[coluna].isna().all():
+            return df
+
+        # normaliza
+        expandido = pd.json_normalize(df[coluna])
+
+        # filtra somente campos desejados
+        if campos is not None:
+
+            cols_existentes = [
+                c for c in campos
+                if c in expandido.columns
+            ]
+
+            expandido = expandido[cols_existentes]
+
+        # prefixa colunas
+        expandido.columns = [
+            f"{coluna}_{c}"
+            for c in expandido.columns
+        ]
+
+        # concatena
+        df = pd.concat(
+            [
+                df.drop(columns=[coluna]).reset_index(drop=True),
+                expandido.reset_index(drop=True)
+            ],
+            axis=1
+        )
+
+        return df
+    
+    def filterSituacao(self,df):
+        df = df.copy()
+        df = df[df["situacao"].isin(["Emitido", "Entregue", "Pendente"])]
+        return df
+    
+    def filterOperacao(self, df):
+
+        df = df.copy()
+
+        col = "itens_codigooperacao"
+        if col not in df.columns:
+            return df
+
+        df = df[~df[col].isin([12])]
+
+        return df
+   
+    def transform(self, df):
+        cols = [
+            "numero",
+            "data",
+            "emissao",
+            "prevEntrega",
+            "situacao",
+            "cliente",
+            "codvendedor",
+            "totalprodutos",
+            "totalPedido",
+            "itens"
+        ]
+
+        cols_existentes = [
+            c for c in cols
+            if c in df.columns
+        ]
+        df = df[cols_existentes].copy()
+        # Expande cliente
+        df = self.expandir_campo(df, coluna="cliente", campo="codigo", novo_nome="cliente_codigo")
+        df = df.drop(columns=["cliente"])
+
+        df = self.filterSituacao(df)
+
+        df = self.expandir_lista(df, coluna="itens", campos=["codigoproduto", "codigooperacao", "qtd", "unitario", "total"])
+
+        df = self.filterOperacao(df)
+
+        return df
+    
+    def add_id_empresa(self, df):
+
+        df = df.copy()
+
+        df["_idEmp"] = self.get_id_empresa()
+        
+        df["_idcodcli"] = (
+            df["_idEmp"].astype(str)
+            + "_"
+            + df["cliente_codigo"].astype(str)
+        )
+
+        df["_idcodpro"] = (
+            df["_idEmp"].astype(str)
+            + "_"
+            + df["itens_codigoproduto"].astype(str)
+        )
+        
+        df["_idcodop"] = (
+            df["_idEmp"].astype(str)
+            + "_"
+            + df["itens_codigooperacao"].astype(str)
+        )        
+
+        df["_idcodrep"] = (
+            df["_idEmp"].astype(str)
+            + "_"
+            + df["codvendedor"].astype(str)
+        )
+
+        return df
