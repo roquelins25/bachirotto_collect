@@ -17,6 +17,7 @@ _COLUMN_RENAME = {
     "tb_cliente": {"_idEmp": "idemp", "_idCliente": "idcliente"},
     "tb_representante": {"_idEmp": "idemp", "_idRep": "idrep"},
     "tb_operacao": {"_idEmp": "idemp", "_idOperacao": "idop"},
+    "tb_produto": {"_idEmp": "idemp", "_idProd": "idprod","categoria_codigo": "codcat", "categoria_descricao": "catdesc" },
 }
 
 
