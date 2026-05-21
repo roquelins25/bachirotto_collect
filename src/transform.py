@@ -229,12 +229,11 @@ class TransformFatos(BaseTransform):
 
         df = df.copy()
 
-        if "codigooperacao" not in df.columns:
+        col = "itens_codigooperacao"
+        if col not in df.columns:
             return df
 
-        df = df[
-            ~df["codigooperacao"].isin([12])
-        ]
+        df = df[~df[col].isin([12])]
 
         return df
    

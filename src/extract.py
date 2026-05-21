@@ -60,16 +60,3 @@ class ColetorFatos(SimDataAPI):
         df = pd.DataFrame(data)
         transform = TransformFatos(type=type_process)
         return transform.add_id_empresa(transform.transform(df))
-# %%
-fatos = ColetorFatos(dataInicial="2026-01-01", dataFinal="2026-01-31")
-fatos = fatos.process(type_process="gerencial")
-
-# %%
-fatos.info()
-
-# %%
-fatos.head()
-# %%
-print( len(fatos) )
-
-# %%
