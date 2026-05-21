@@ -6,7 +6,7 @@ import pandas as pd
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 from config.api_conect import SimDataAPI
-from transform import TransformParceiros, TransformOperacoes , TransformProdutos
+from transform import TransformParceiros, TransformOperacoes , TransformProdutos, TransformFatos
 
 # %%
 class ColectorParceiros(SimDataAPI):
@@ -58,7 +58,8 @@ class ColetorFatos(SimDataAPI):
     def process(self, type_process: str) -> pd.DataFrame:
         data = self.get(self._endpoint, type_process).get("data", [])
         df = pd.DataFrame(data)
-        return df
+        transform = TransformFatos(type=type_process)
+        return transform.add_id_empresa(transform.transform(df))
 # %%
 fatos = ColetorFatos(dataInicial="2026-01-01", dataFinal="2026-01-31")
 fatos = fatos.process(type_process="gerencial")
@@ -68,4 +69,7 @@ fatos.info()
 
 # %%
 fatos.head()
+# %%
+print( len(fatos) )
+
 # %%

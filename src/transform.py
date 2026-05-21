@@ -219,6 +219,24 @@ class TransformFatos(BaseTransform):
         )
 
         return df
+    
+    def filterSituacao(self,df):
+        df = df.copy()
+        df = df[df["situacao"].isin(["Emitido", "Entregue", "Pendente"])]
+        return df
+    
+    def filterOperacao(self, df):
+
+        df = df.copy()
+
+        if "codigooperacao" not in df.columns:
+            return df
+
+        df = df[
+            ~df["codigooperacao"].isin([12])
+        ]
+
+        return df
    
     def transform(self, df):
         cols = [
@@ -245,21 +263,10 @@ class TransformFatos(BaseTransform):
 
         df = self.filterSituacao(df)
 
-        df = self.expandir_lista(df, coluna="itens", campos=["codigoProduto", "codigooperacao", "qtd", "unitario", "total"])
-        df = df.drop(columns=["itens"])
+        df = self.expandir_lista(df, coluna="itens", campos=["codigoproduto", "codigooperacao", "qtd", "unitario", "total"])
 
         df = self.filterOperacao(df)
 
-        return df
-    
-    def filterSituacao(self,df):
-        df = df.copy()
-        df = df[df["situacao"].isin(["Emitido", "Entregue", "Pendente"])]
-        return df
-    
-    def filterOperacao(self, df):
-        df = df.copy()
-        df = df[~df["codigooperacao"].isin([12])]
         return df
     
     def add_id_empresa(self, df):
@@ -267,12 +274,6 @@ class TransformFatos(BaseTransform):
         df = df.copy()
 
         df["_idEmp"] = self.get_id_empresa()
-
-        df["_idemp"] = (
-            df["_idEmp"].astype(str)
-            + "_"
-            + df["codigo"].astype(str)
-        )
         
         df["_idcodcli"] = (
             df["_idEmp"].astype(str)
@@ -283,13 +284,13 @@ class TransformFatos(BaseTransform):
         df["_idcodpro"] = (
             df["_idEmp"].astype(str)
             + "_"
-            + df["codigoProduto"].astype(str)
+            + df["itens_codigoproduto"].astype(str)
         )
         
         df["_idcodop"] = (
             df["_idEmp"].astype(str)
             + "_"
-            + df["codigooperacao"].astype(str)
+            + df["itens_codigooperacao"].astype(str)
         )        
 
         df["_idcodrep"] = (
