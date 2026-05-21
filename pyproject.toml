@@ -1,0 +1,13 @@
+[project]
+name = "baschirotto-collect"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.14"
+dependencies = [
+    "dotenv>=0.9.9",
+    "fastparquet>=2026.5.0",
+    "pandas>=3.0.2",
+    "psycopg2>=2.9.12",
+    "requests>=2.33.1",
+]
