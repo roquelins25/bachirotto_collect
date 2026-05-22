@@ -242,7 +242,6 @@ class TransformFatos(BaseTransform):
             "numero",
             "data",
             "emissao",
-            "prevEntrega",
             "situacao",
             "cliente",
             "codvendedor",
