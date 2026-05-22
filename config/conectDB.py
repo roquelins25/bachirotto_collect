@@ -1,10 +1,13 @@
 import psycopg2
 import os
+from pathlib import Path
 from dotenv import load_dotenv
+
+_ENV_PATH = Path(__file__).resolve().parent.parent / ".env"
 
 
 def connect_db():
-    load_dotenv()
+    load_dotenv(_ENV_PATH, override=True)
     try:
         connection = psycopg2.connect(
             host=os.getenv('DB_HOST'),
