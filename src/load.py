@@ -122,3 +122,23 @@ def process_table(table: str, df: pd.DataFrame) -> None:
         raise
     finally:
         conn.close()
+
+def process_select(sql_file: str) -> None:
+    sql_path = os.path.join(_SQL_DIR, sql_file)
+    if not os.path.exists(sql_path):
+        logger.error("SQL não encontrado: %s", sql_file)
+        return
+
+    with open(sql_path, encoding="utf-8") as f:
+        sql = f.read()
+
+    conn = connect_db()
+    try:
+        df = pd.read_sql_query(sql, conn)
+        table = sql_file.replace(".sql", "")
+        process_table(table, df)
+    except Exception:
+        logger.exception("Falha ao processar %s", sql_file)
+        raise
+    finally:
+        conn.close()
