@@ -23,23 +23,5 @@ CREATE TABLE IF NOT EXISTS tb_fatos (
     idcodcli              VARCHAR(50),
     idcodpro              VARCHAR(50),
     idcodop               VARCHAR(50),
-    idcodrep              VARCHAR(50),
-
-    -- FOREIGN KEYS
-
-    CONSTRAINT fk_cliente
-        FOREIGN KEY (idcodcli)
-        REFERENCES tb_cliente(idcliente),
-
-    CONSTRAINT fk_produto
-        FOREIGN KEY (idcodpro)
-        REFERENCES tb_produto(idprod),
-
-    CONSTRAINT fk_operacao
-        FOREIGN KEY (idcodop)
-        REFERENCES tb_operacao(idop),
-
-    CONSTRAINT fk_representante
-        FOREIGN KEY (idcodrep)
-        REFERENCES tb_representante(idrep)
+    idcodrep              VARCHAR(50)
 );
