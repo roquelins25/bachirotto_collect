@@ -1,14 +1,17 @@
 import os
+from pathlib import Path
 
 import requests
 from dotenv import load_dotenv
+
+_ENV_PATH = Path(__file__).resolve().parent.parent / ".env"
 
 
 class SimDataAPI:
     _BASE_URL = "https://api.simdata.com.br"
 
     def __init__(self):
-        load_dotenv()
+        load_dotenv(_ENV_PATH, override=True)
         self._tokens = {
             "gerencial": os.getenv("GERENCIAL"),
             "fiscal":    os.getenv("FISCAL"),
