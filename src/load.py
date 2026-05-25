@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 _SQL_DIR = os.path.join(os.path.dirname(__file__), "..", "sql")
 
 _COLUMN_RENAME = {
-    "tb_cliente": {"_idEmp": "idemp", "_idCliente": "idcliente"},
+    "tb_cliente": {"_idEmp": "idemp", "_idCliente": "idcliente", "_idVendedor": "id_codven"},
     "tb_representante": {"_idEmp": "idemp", "_idRep": "idrep"},
     "tb_operacao": {"_idEmp": "idemp", "_idOperacao": "idop"},
     "tb_produto": {"_idEmp": "idemp", "_idProd": "idprod", "categoria_codigo": "codcat", "categoria_descricao": "catdesc"},

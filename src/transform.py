@@ -58,9 +58,10 @@ class TransformParceiros(BaseTransform):
         
         if self.tipo in (1, 5):
             df["_idCliente"] = df["_idEmp"].astype(str) + "_" + df["codigo"].astype(str)
+            df["_idVendedor"] = df["_idEmp"].astype(str) + "_" + df["codvendedor"].astype(str)
         elif self.tipo == 4:
             df["_idRep"] = df["_idEmp"].astype(str) + "_" + df["codigo"].astype(str)
-        
+            df["_idVendedor"] = df["_idEmp"].astype(str) + "_" + df["codvendedor"].astype(str)
         return df
 
 
