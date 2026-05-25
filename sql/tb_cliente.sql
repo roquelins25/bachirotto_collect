@@ -10,5 +10,6 @@ CREATE TABLE IF NOT EXISTS tb_cliente (
     uf           VARCHAR(2),
     datacadastro DATE,
     idemp        INT,
+    id_codven    VARCHAR(20),
     idcliente    VARCHAR(20) NOT NULL PRIMARY KEY
 );

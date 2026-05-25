@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 _SQL_DIR = os.path.join(os.path.dirname(__file__), "..", "sql")
 
 _COLUMN_RENAME = {
-    "tb_cliente": {"_idEmp": "idemp", "_idCliente": "idcliente"},
+    "tb_cliente": {"_idEmp": "idemp", "_idCliente": "idcliente", "_idVendedor": "id_codven"},
     "tb_representante": {"_idEmp": "idemp", "_idRep": "idrep"},
     "tb_operacao": {"_idEmp": "idemp", "_idOperacao": "idop"},
     "tb_produto": {"_idEmp": "idemp", "_idProd": "idprod", "categoria_codigo": "codcat", "categoria_descricao": "catdesc"},
@@ -119,6 +119,26 @@ def process_table(table: str, df: pd.DataFrame) -> None:
     except Exception:
         conn.rollback()
         logger.exception("Falha ao processar %s", table)
+        raise
+    finally:
+        conn.close()
+
+def process_select(sql_file: str) -> None:
+    sql_path = os.path.join(_SQL_DIR, sql_file)
+    if not os.path.exists(sql_path):
+        logger.error("SQL não encontrado: %s", sql_file)
+        return
+
+    with open(sql_path, encoding="utf-8") as f:
+        sql = f.read()
+
+    conn = connect_db()
+    try:
+        df = pd.read_sql_query(sql, conn)
+        table = sql_file.replace(".sql", "")
+        process_table(table, df)
+    except Exception:
+        logger.exception("Falha ao processar %s", sql_file)
         raise
     finally:
         conn.close()
