@@ -11,7 +11,7 @@ from airflow import DAG
 from airflow.operators.python import PythonOperator
 
 import pandas as pd
-from extract import ColectorParceiros, ColetorOperacoes, ColetorProdutos
+from extract import ColectorParceiros, ColetorOperacoes, ColetorProdutos, ColetorCategoriaFinanceira
 from load import process_table
 
 _DEFAULT_ARGS = {
@@ -54,6 +54,13 @@ def _run_tb_operacao() -> None:
     df = pd.concat([df_gerencial, df_fiscal], ignore_index=True).drop_duplicates(subset=["_idOperacao"])
     process_table("tb_operacao", df)
 
+def _run_tb_categoria_financeira() -> None:
+    df_categoria_gerencial = ColetorCategoriaFinanceira().process("gerencial")
+    df_categoria_fiscal = ColetorCategoriaFinanceira().process("fiscal")
+
+    df = pd.concat([df_categoria_gerencial, df_categoria_fiscal], ignore_index=True).drop_duplicates(subset=["_idCatFin"])
+    process_table("tb_categoriaFinanceira", df)
+
 
 with DAG(
     dag_id="baschirotto_dimensoes",
@@ -69,6 +76,7 @@ with DAG(
     op_representante = PythonOperator(task_id="tb_representante", python_callable=_run_tb_representante)
     op_produto = PythonOperator(task_id="tb_produto", python_callable=_run_tb_produto)
     op_operacao = PythonOperator(task_id="tb_operacao", python_callable=_run_tb_operacao)
+    op_catfinanceiro = PythonOperator(task_id="tb_categoriaFinanceira", python_callable=_run_tb_categoria_financeira)
 
     # paralelo — sem dependência entre dimensões
-    [op_cliente, op_representante, op_produto, op_operacao]
+    [op_cliente, op_representante, op_produto, op_operacao, op_catfinanceiro]

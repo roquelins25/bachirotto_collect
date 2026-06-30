@@ -10,7 +10,7 @@ from airflow import DAG
 from airflow.operators.python import PythonOperator
 
 import pandas as pd
-from extract import ColetorFatos
+from extract import ColetorFatos, ColetorCaixaBancos
 from load import process_table
 
 _JANELA_DIAS = 90
@@ -36,17 +36,37 @@ def _run_fatos_incremental() -> None:
     process_table("tb_fatos", df)
 
 
+def _run_caixaBanco_incremental() -> None:
+    hoje = date.today()
+    inicio = hoje - timedelta(days=_JANELA_DIAS)
+    start_date = date(inicio.year, inicio.month, 1).strftime("%Y-%m-%d")
+    end_date = hoje.strftime("%Y-%m-%d")
+
+    df_gerencial = ColetorCaixaBancos(start_date=start_date, end_date=end_date).process("gerencial")
+    df_fiscal = ColetorCaixaBancos(start_date=start_date, end_date=end_date).process("fiscal")
+    df = pd.concat([df_gerencial, df_fiscal], ignore_index=True)
+    if not df.empty:
+        process_table("tb_caixaBanco", df)
+
+
 with DAG(
-    dag_id="baschirotto_fatos_incremental",
+    dag_id="baschirotto_incremental",
     default_args=_DEFAULT_ARGS,
-    description="Carga incremental de tb_fatos — últimos 90 dias, a cada 2 horas",
+    description="Carga incremental de tb_fatos e tb_caixaBanco — últimos 90 dias, a cada 2 horas",
     schedule="0 */2 * * *",
     start_date=datetime(2026, 5, 21),
     catchup=False,
-    tags=["baschirotto", "fatos", "incremental"],
+    tags=["baschirotto", "incremental"],
 ) as dag:
 
-    PythonOperator(
+    op_fatos = PythonOperator(
         task_id="fatos_ultimos_90_dias",
         python_callable=_run_fatos_incremental,
     )
+
+    op_caixa = PythonOperator(
+        task_id="caixaBanco_ultimos_90_dias",
+        python_callable=_run_caixaBanco_incremental,
+    )
+
+    op_fatos >> op_caixa

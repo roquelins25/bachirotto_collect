@@ -63,7 +63,6 @@ class TransformParceiros(BaseTransform):
             df["_idRep"] = df["_idEmp"].astype(str) + "_" + df["codigo"].astype(str)
         return df
 
-
 class TransformOperacoes(BaseTransform):
     def __init__(self, type: str):      
         self.type = type.lower()
@@ -158,7 +157,7 @@ class TransformProdutos(BaseTransform):
                 "MIX")
 
         return df
-# %%
+
 class TransformFatos(BaseTransform):
 
     def __init__(self, type: str):
@@ -297,4 +296,68 @@ class TransformFatos(BaseTransform):
             + df["codvendedor"].astype(str)
         )
 
+        return df
+    
+class TransformCategoriaFinanceira(BaseTransform):
+    def __init__(self, type: str):
+        self.type = type.lower()
+
+    def transform(self, df):
+
+        cols = [
+            "codigo",
+            "descricao",
+            "tipo",
+            "grupo"
+        ]
+
+        cols_existentes = [
+            c for c in cols
+            if c in df.columns
+        ]
+
+        return df[cols_existentes]
+    def add_id_empresa(self, df):
+        df = df.copy()
+
+        df["_idEmp"] = self.get_id_empresa()
+
+        df["_idCatFin"] = df["_idEmp"].astype(str) + "_" + df["codigo"].astype(str)
+
+        return df
+
+class TransformCaixaBancos(BaseTransform):
+    _EXCLUIR_CAT = {"93", "8", "null"}
+
+    def __init__(self, type: str):
+        self.type = type.lower()
+
+    def transform(self, df):
+        cols = [
+            "tipo", "historico", "numdoc", "categoriaFinanceira",
+            "codCategoriaFinanceira", "lancamento", "movimento",
+            "valor", "codBanco",
+        ]
+        cols_existentes = [c for c in cols if c in df.columns]
+        df = df[cols_existentes].copy()
+
+        df = df.replace("null", pd.NA)
+
+        df = df[df["tipo"].notna()]
+        df = df[~df["codCategoriaFinanceira"].isin(self._EXCLUIR_CAT)]
+        df = df[df["codCategoriaFinanceira"].notna()]
+
+        df["valorCorrigido"] = np.where(df["tipo"] == "E", df["valor"], df["valor"] * -1)
+
+        df["lancamento"] = pd.to_datetime(df["lancamento"], errors="coerce").dt.date
+        df["movimento"] = pd.to_datetime(df["movimento"], errors="coerce").dt.date
+        df["valor"] = pd.to_numeric(df["valor"], errors="coerce")
+        df["valorCorrigido"] = pd.to_numeric(df["valorCorrigido"], errors="coerce")
+
+        return df
+
+    def add_id_empresa(self, df):
+        df = df.copy()
+        df["_idEmp"] = self.get_id_empresa()
+        df["_idCodCategoria"] = df["_idEmp"].astype(str) + "_" + df["codCategoriaFinanceira"].astype(str)
         return df
