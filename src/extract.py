@@ -70,6 +70,7 @@ class ColetorCategoriaFinanceira(SimDataAPI):
     def process(self, type_process: str) -> pd.DataFrame:
         data = self.get(self._endpoint, type_process).get("data", [])
         df = pd.DataFrame(data)
+        import logging; logging.getLogger(__name__).info("categoriaFinanceira colunas [%s]: %s", type_process, df.columns.tolist())
         transform = TransformCategoriaFinanceira(type=type_process)
         return transform.add_id_empresa(transform.transform(df))
 
@@ -102,8 +103,14 @@ class ColetorCaixaBancos(SimDataAPI):
                     f"lancamentocaixa/listar?tipodata=movimento"
                     f"&datainicial={start}&datafinal={end}&codbanco={banco}"
                 )
-                data = self.get(endpoint, type_process).get("data", [])
-                if not data:
+                response = self.get(endpoint, type_process)
+                data = response.get("data", [])
+                if not data or not isinstance(data, list):
+                    if data and not isinstance(data, list):
+                        import logging; logging.getLogger(__name__).warning(
+                            "Resposta inesperada [%s banco=%s mes=%s]: type=%s valor=%r",
+                            type_process, banco, start, type(data).__name__, str(data)[:200],
+                        )
                     continue
                 df_mes = pd.DataFrame(data)
                 df_mes["codBanco"] = banco
