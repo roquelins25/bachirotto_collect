@@ -25,6 +25,18 @@ _COLUMN_RENAME = {
         "_idcodop": "idcodop",
         "_idcodpro": "idcodpro",
     },
+    "tb_caixaBanco": {
+        "_idEmp": "idemp",
+        "categoriaFinanceira": "categoriafinanceira",
+        "codCategoriaFinanceira": "codcategoriafinanceira",
+        "valorCorrigido": "valorcorrigido",
+        "codBanco": "codbanco",
+        "_idCodCategoria": "idcodcategoria",
+    },
+    "tb_categoriaFinanceira": {
+        "_idEmp": "idemp",
+        "_idCatFin": "idcodfin",
+    },
 }
 
 _TABLE_PK = {
@@ -32,6 +44,7 @@ _TABLE_PK = {
     "tb_representante": "idrep",
     "tb_operacao": "idop",
     "tb_produto": "idprod",
+    "tb_categoriaFinanceira": "idcodfin",
 }
 
 
@@ -78,6 +91,29 @@ def _upsert_dimensao(conn, df: pd.DataFrame, table: str, pk_col: str) -> None:
     logger.info("%s: %d registros upserted", table, len(df))
 
 
+def _load_caixaBanco(conn, df: pd.DataFrame, table: str) -> None:
+    cols = df.columns.tolist()
+    cols_str = ", ".join(cols)
+    copy_sql = f"COPY {table} ({cols_str}) FROM STDIN WITH (FORMAT CSV, NULL '')"
+
+    data_min = pd.to_datetime(df["movimento"]).min().date()
+    data_max = pd.to_datetime(df["movimento"]).max().date()
+    idemp_list = df["idemp"].unique().tolist()
+
+    delete_sql = f"DELETE FROM {table} WHERE movimento BETWEEN %s AND %s AND idemp = ANY(%s)"
+
+    with conn.cursor() as cur:
+        cur.execute(delete_sql, (data_min, data_max, idemp_list))
+        deleted = cur.rowcount
+        cur.copy_expert(copy_sql, _copy_to_buffer(df))
+
+    conn.commit()
+    logger.info(
+        "%s: %d registros deletados, %d inseridos (período %s → %s)",
+        table, deleted, len(df), data_min, data_max,
+    )
+
+
 def _load_fatos(conn, df: pd.DataFrame, table: str) -> None:
     cols = df.columns.tolist()
     cols_str = ", ".join(cols)
@@ -112,6 +148,8 @@ def process_table(table: str, df: pd.DataFrame) -> None:
 
         if table == "tb_fatos":
             _load_fatos(conn, df, table)
+        elif table == "tb_caixaBanco":
+            _load_caixaBanco(conn, df, table)
         else:
             pk_col = _TABLE_PK[table]
             _upsert_dimensao(conn, df, table, pk_col)
