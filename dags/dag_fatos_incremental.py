@@ -36,15 +36,29 @@ def _run_fatos_incremental() -> None:
     process_table("tb_fatos", df)
 
 
+def _month_bounds(hoje: date, months_ago: int) -> tuple[str, str]:
+    month = hoje.month - 1 - months_ago
+    year = hoje.year + month // 12
+    month = month % 12 + 1
+    inicio = date(year, month, 1)
+    if months_ago == 0:
+        fim = hoje
+    elif month == 12:
+        fim = date(year, 12, 31)
+    else:
+        fim = date(year, month + 1, 1) - timedelta(days=1)
+    return inicio.strftime("%Y-%m-%d"), fim.strftime("%Y-%m-%d")
+
+
 def _run_caixaBanco_incremental() -> None:
     hoje = date.today()
-    inicio = hoje - timedelta(days=_JANELA_DIAS)
-    start_date = date(inicio.year, inicio.month, 1).strftime("%Y-%m-%d")
-    end_date = hoje.strftime("%Y-%m-%d")
+    dfs = []
+    for months_ago in (2, 1, 0):
+        start_date, end_date = _month_bounds(hoje, months_ago)
+        dfs.append(ColetorCaixaBancos(start_date=start_date, end_date=end_date).process("gerencial"))
+        dfs.append(ColetorCaixaBancos(start_date=start_date, end_date=end_date).process("fiscal"))
 
-    df_gerencial = ColetorCaixaBancos(start_date=start_date, end_date=end_date).process("gerencial")
-    df_fiscal = ColetorCaixaBancos(start_date=start_date, end_date=end_date).process("fiscal")
-    df = pd.concat([df_gerencial, df_fiscal], ignore_index=True)
+    df = pd.concat(dfs, ignore_index=True)
     if not df.empty:
         process_table("tb_caixaBanco", df)
 
@@ -52,7 +66,7 @@ def _run_caixaBanco_incremental() -> None:
 with DAG(
     dag_id="baschirotto_incremental",
     default_args=_DEFAULT_ARGS,
-    description="Carga incremental de tb_fatos e tb_caixaBanco — últimos 90 dias, a cada 2 horas",
+    description="Carga incremental de tb_fatos (últimos 90 dias) e tb_caixaBanco (últimos 3 meses fechados), a cada 2 horas",
     schedule="0 */2 * * *",
     start_date=datetime(2026, 5, 21),
     catchup=False,
@@ -65,7 +79,7 @@ with DAG(
     )
 
     op_caixa = PythonOperator(
-        task_id="caixaBanco_ultimos_90_dias",
+        task_id="caixaBanco_ultimos_3_meses_fechados",
         python_callable=_run_caixaBanco_incremental,
     )
 
