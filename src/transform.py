@@ -327,7 +327,10 @@ class TransformCategoriaFinanceira(BaseTransform):
         return df
 
 class TransformCaixaBancos(BaseTransform):
-    _EXCLUIR_CAT = {"93", "8", "null"}
+    _EXCLUIR_CAT = {
+        10001: {"93", "8", "null"},
+        10002: {"8", "100", "null"},
+    }
 
     def __init__(self, type: str):
         self.type = type.lower()
@@ -343,8 +346,11 @@ class TransformCaixaBancos(BaseTransform):
 
         df = df.replace("null", pd.NA)
 
+        id_empresa = self.get_id_empresa()
+        categorias_excluir = self._EXCLUIR_CAT.get(id_empresa, set())
+
         df = df[df["tipo"].notna()]
-        df = df[~df["codCategoriaFinanceira"].isin(self._EXCLUIR_CAT)]
+        df = df[~df["codCategoriaFinanceira"].isin(categorias_excluir)]
         df = df[df["codCategoriaFinanceira"].notna()]
 
         df["valorCorrigido"] = np.where(df["tipo"] == "E", df["valor"], df["valor"] * -1)
@@ -361,3 +367,4 @@ class TransformCaixaBancos(BaseTransform):
         df["_idEmp"] = self.get_id_empresa()
         df["_idCodCategoria"] = df["_idEmp"].astype(str) + "_" + df["codCategoriaFinanceira"].astype(str)
         return df
+# %%
