@@ -1,12 +1,16 @@
 # %%
+import logging
 import os
 import sys
+import time
 
 import pandas as pd
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 from config.api_conect import SimDataAPI
 from transform import TransformParceiros, TransformOperacoes, TransformProdutos, TransformFatos, TransformCategoriaFinanceira, TransformCaixaBancos
+
+logger = logging.getLogger(__name__)
 
 # %%
 class ColectorParceiros(SimDataAPI):
@@ -70,7 +74,7 @@ class ColetorCategoriaFinanceira(SimDataAPI):
     def process(self, type_process: str) -> pd.DataFrame:
         data = self.get(self._endpoint, type_process).get("data", [])
         df = pd.DataFrame(data)
-        import logging; logging.getLogger(__name__).info("categoriaFinanceira colunas [%s]: %s", type_process, df.columns.tolist())
+        logger.info("categoriaFinanceira colunas [%s]: %s", type_process, df.columns.tolist())
         transform = TransformCategoriaFinanceira(type=type_process)
         return transform.add_id_empresa(transform.transform(df))
 
@@ -103,18 +107,22 @@ class ColetorCaixaBancos(SimDataAPI):
                     f"lancamentocaixa/listar?tipodata=movimento"
                     f"&datainicial={start}&datafinal={end}&codbanco={banco}"
                 )
+                logger.info("Extraindo banco %s [%s] mes=%s", banco, type_process, start)
                 response = self.get(endpoint, type_process)
                 data = response.get("data", [])
                 if not data or not isinstance(data, list):
                     if data and not isinstance(data, list):
-                        import logging; logging.getLogger(__name__).warning(
+                        logger.warning(
                             "Resposta inesperada [%s banco=%s mes=%s]: type=%s valor=%r",
                             type_process, banco, start, type(data).__name__, str(data)[:200],
                         )
+                    time.sleep(5)
                     continue
                 df_mes = pd.DataFrame(data)
                 df_mes["codBanco"] = banco
                 frames.append(df_mes)
+                logger.info("Banco %s [%s] mes=%s: %d registros", banco, type_process, start, len(df_mes))
+                time.sleep(5)
 
         if not frames:
             return pd.DataFrame()
