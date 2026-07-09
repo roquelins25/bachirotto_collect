@@ -1,3 +1,4 @@
+#%%
 import sys
 import time
 from pathlib import Path
@@ -15,7 +16,7 @@ from airflow.operators.python import PythonOperator
 import pandas as pd
 from extract import ColetorFatos, ColetorCaixaBancos
 from load import process_table
-
+#%%
 _HISTORICO_INICIO = date(2024, 1, 1)
 _RATE_LIMIT_SLEEP = 15
 

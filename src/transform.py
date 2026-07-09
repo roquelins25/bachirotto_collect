@@ -328,8 +328,8 @@ class TransformCategoriaFinanceira(BaseTransform):
 
 class TransformCaixaBancos(BaseTransform):
     _EXCLUIR_CAT = {
-        10001: {"93", "8", "null"},
-        10002: {"8", "100", "null"},
+        10001: {"93", "8", "null",""},
+        10002: {"8", "100", "null",""},
     }
 
     def __init__(self, type: str):
