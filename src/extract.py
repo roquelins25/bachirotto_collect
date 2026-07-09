@@ -77,8 +77,8 @@ class ColetorCategoriaFinanceira(SimDataAPI):
 # %%
 class ColetorCaixaBancos(SimDataAPI):
     _BANCOS = {
-        "gerencial": ["1", "11", "8", "10"],
-        "fiscal":    ["1", "6", "5", "4", "9", "10", "12", "14", "15", "17", "21", "22", "24", "25", "26"],
+        "gerencial": ["1","11","8","10"],
+        "fiscal":    ["1","6","5","4","9","10","12","14","15","17","21","22","24","26","27","28"],
     }
 
     def __init__(self, start_date: str, end_date: str):
@@ -120,5 +120,6 @@ class ColetorCaixaBancos(SimDataAPI):
             return pd.DataFrame()
 
         df = pd.concat(frames, ignore_index=True)
+        df.to_excel(f"caixa_bancos{type_process.capitalize()}.xlsx", index=False)
         transform = TransformCaixaBancos(type=type_process)
         return transform.add_id_empresa(transform.transform(df))
